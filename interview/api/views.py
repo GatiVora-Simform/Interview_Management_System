@@ -2,6 +2,7 @@ from rest_framework import status,generics,filters
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from account.api.serializers import UserSerializer
 from account.models import User
@@ -13,17 +14,21 @@ from interview.api.serializers import JobSerializer,JobApplicationSerializer,Int
 class JobListCreateView(generics.ListCreateAPIView):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['department', 'position', 'is_open'] #/jobs/?department=Python
     search_fields = ['title', 'description', 'department'] #/jobs/?search=developer 
     ordering_fields = ['created_at']
 
+
 class JobDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
+    permission_classes = [IsAuthenticated]
 
 class JobApplicationsListView(generics.ListAPIView):
     serializer_class = JobApplicationSerializer
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         job_id = self.kwargs.get('pk')
@@ -32,16 +37,19 @@ class JobApplicationsListView(generics.ListAPIView):
 class OpenJobsListView(generics.ListAPIView):
     queryset = Job.objects.filter(is_open = True)
     serializer_class = JobSerializer
+    permission_classes = [IsAuthenticated]
 
 class JobApplicationListView(generics.ListCreateAPIView):
     queryset = JobApplication.objects.all()
     serializer_class = JobApplicationSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend,filters.OrderingFilter]
     filterset_fields = ['status', 'is_selected', 'job']
     ordering_fields = ['applied_on', 'status']
 
 class JobApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = JobApplication.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
         if self.request.method == 'PATCH' and status in self.request.data:
@@ -51,6 +59,7 @@ class JobApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
 class SelectCandidateView(generics.UpdateAPIView):
     queryset = JobApplication.objects.all()
     serializer_class = JobApplicationStatusUpdateSerializer
+    permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -64,6 +73,7 @@ class SelectCandidateView(generics.UpdateAPIView):
 
 class MyApplicationsListView(generics.ListAPIView):
     serializer_class = JobApplicationSerializer
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         user = self.request.user
@@ -74,10 +84,12 @@ class MyApplicationsListView(generics.ListAPIView):
 class InterviewRoundListView(generics.ListCreateAPIView):
     queryset = InterviewRound.objects.all()
     serializer_class = InterviewRoundSerializer
+    permission_classes = [IsAuthenticated]
 
 class ApplicationRoundListView(generics.ListCreateAPIView):
     queryset = ApplicationRound.objects.all()
     serializer_class = ApplicationRoundSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['interviewer']
     ordering_fields = ['scheduled_time']
@@ -89,9 +101,11 @@ class ApplicationRoundListView(generics.ListCreateAPIView):
 class ApplicationRoundDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationRound.objects.all()
     serializer_class = ApplicationRoundSerializer
+    permission_classes = [IsAuthenticated]
 
 class FeedbackCreateView(generics.CreateAPIView):
     serializer_class = FeedbackSerializer
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -104,6 +118,8 @@ class FeedbackCreateView(generics.CreateAPIView):
             )
 
         serializer.save()
+
+
 
 # class CandidateFeedbackListView(generics.ListAPIView):
 #     serializer_class = FeedbackSerializer
@@ -123,6 +139,7 @@ class FeedbackCreateView(generics.CreateAPIView):
 
 class MyInterviewsView(generics.ListAPIView):
     serializer_class = ApplicationRoundSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -134,6 +151,7 @@ class MyInterviewsView(generics.ListAPIView):
 
 class UpcomingInterviewsView(generics.ListAPIView):
     serializer_class = ApplicationRoundSerializer
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         from django.utils import timezone

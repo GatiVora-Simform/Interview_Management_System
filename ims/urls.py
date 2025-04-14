@@ -16,10 +16,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
 
 urlpatterns = [
+
+    path('api/login/', TokenObtainPairView.as_view(), name='login'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
     path('admin/', admin.site.urls),
     path('api/account/',include('account.api.urls')),
-    path('api/',include('account.api.urls')),
+    path('api/',include('interview.api.urls')),
 
 ]
+
+'''
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NDY4NDQ3NSwiaWF0IjoxNzQ0NjEyNDc1LCJqdGkiOiI0YmU4ZWJmYzlhNmQ0MmVhOGQ0ZDViMTI1MWI4ZGZiOSIsInVzZXJfaWQiOjJ9.L-E9QK-132MgBojO_GQ0bUfltkrvHUm0E4l24_xmP5s",
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0NjEyNzc1LCJpYXQiOjE3NDQ2MTI0NzUsImp0aSI6ImNiZjE2Y2Y3NjczZTQ4YjRiZGVmY2U3OGExNTMyMWEzIiwidXNlcl9pZCI6Mn0.yUmFPtIemALj0UsB7IGQxNNO2QlYiRRPYctj1k5v8F8"
+}
+'''
