@@ -4,6 +4,7 @@ from account.api.serializers import UserSerializer
 from interview.models import Job, ApplicationRound, JobApplication, Feedback, InterviewRound
 
 
+
 class JobSerializer(serializers.ModelSerializer):
     application_count = serializers.SerializerMethodField()
 

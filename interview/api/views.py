@@ -9,12 +9,13 @@ from account.models import User
 
 from interview.models import Job,JobApplication,InterviewRound,ApplicationRound,Feedback
 from interview.api.serializers import JobSerializer,JobApplicationSerializer,InterviewRoundSerializer,ApplicationRoundSerializer,FeedbackSerializer,JobApplicationStatusUpdateSerializer
+from interview.api.permissions import IsAdmin, IsInterviewer, IsCandidate, IsAdminOrInterviewer, AdminFullInterviewerReadOnly
 
 
 class JobListCreateView(generics.ListCreateAPIView):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['department', 'position', 'is_open'] #/jobs/?department=Python
     search_fields = ['title', 'description', 'department'] #/jobs/?search=developer 
@@ -24,11 +25,11 @@ class JobListCreateView(generics.ListCreateAPIView):
 class JobDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
 
 class JobApplicationsListView(generics.ListAPIView):
     serializer_class = JobApplicationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
     
     def get_queryset(self):
         job_id = self.kwargs.get('pk')
@@ -42,14 +43,14 @@ class OpenJobsListView(generics.ListAPIView):
 class JobApplicationListView(generics.ListCreateAPIView):
     queryset = JobApplication.objects.all()
     serializer_class = JobApplicationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
     filter_backends = [DjangoFilterBackend,filters.OrderingFilter]
     filterset_fields = ['status', 'is_selected', 'job']
     ordering_fields = ['applied_on', 'status']
 
 class JobApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = JobApplication.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
     
     def get_serializer_class(self):
         if self.request.method == 'PATCH' and status in self.request.data:
@@ -59,7 +60,7 @@ class JobApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
 class SelectCandidateView(generics.UpdateAPIView):
     queryset = JobApplication.objects.all()
     serializer_class = JobApplicationStatusUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -73,7 +74,7 @@ class SelectCandidateView(generics.UpdateAPIView):
 
 class MyApplicationsListView(generics.ListAPIView):
     serializer_class = JobApplicationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsCandidate]
     
     def get_queryset(self):
         user = self.request.user
@@ -84,12 +85,12 @@ class MyApplicationsListView(generics.ListAPIView):
 class InterviewRoundListView(generics.ListCreateAPIView):
     queryset = InterviewRound.objects.all()
     serializer_class = InterviewRoundSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
 
 class ApplicationRoundListView(generics.ListCreateAPIView):
     queryset = ApplicationRound.objects.all()
     serializer_class = ApplicationRoundSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['interviewer']
     ordering_fields = ['scheduled_time']
@@ -101,7 +102,7 @@ class ApplicationRoundListView(generics.ListCreateAPIView):
 class ApplicationRoundDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationRound.objects.all()
     serializer_class = ApplicationRoundSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdmin]
 
 class FeedbackCreateView(generics.CreateAPIView):
     serializer_class = FeedbackSerializer
@@ -117,29 +118,31 @@ class FeedbackCreateView(generics.CreateAPIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer.save()
+        feedback = serializer.save()
+         
+         # Trigger async task to send notification emails
+        from interview.tasks import send_feedback_notification
+        send_feedback_notification.delay(feedback.id)
 
 
+class CandidateFeedbackListView(generics.ListAPIView):
+    serializer_class = FeedbackSerializer
+    permission_classes = [IsAuthenticated,IsCandidate]
 
-# class CandidateFeedbackListView(generics.ListAPIView):
-#     serializer_class = FeedbackSerializer
+    def get_queryset(self):
+        user = self.request.user
 
-#     def get_queryset(self):
-#         user = self.request.user
-
-#         if user.role != 'candidate':
-#             raise PermissionDenied("You are not authorized to view feedbacks.")
         
-#         job_applications = JobApplication.objects.filter(candidate=user)
-#         application_rounds = ApplicationRound.objects.filter(application__in=job_applications)
+        job_applications = JobApplication.objects.filter(candidate=user)
+        application_rounds = ApplicationRound.objects.filter(application__in=job_applications)
 
-#         feedbacks = Feedback.objects.filter(application_round__in=application_rounds)
+        feedbacks = Feedback.objects.filter(application_round__in=application_rounds)
         
-#         return feedbacks
+        return feedbacks
 
 class MyInterviewsView(generics.ListAPIView):
     serializer_class = ApplicationRoundSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsInterviewer]
 
     def get_queryset(self):
         user = self.request.user
@@ -151,7 +154,7 @@ class MyInterviewsView(generics.ListAPIView):
 
 class UpcomingInterviewsView(generics.ListAPIView):
     serializer_class = ApplicationRoundSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsAdminOrInterviewer]
     
     def get_queryset(self):
         from django.utils import timezone
