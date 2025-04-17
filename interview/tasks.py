@@ -4,46 +4,74 @@ from django.conf import settings
 from django.utils import timezone
 from django.db import models
 from datetime import datetime, timedelta
+from django.template.loader import render_to_string
+from interview.models import Feedback
+from account.models import User
+
 
 @shared_task
 def send_feedback_notification(feedback_id):
-
-    from interview.models import Feedback
-    from account.models import User
+    """
+    This task sends email notifications when feedback is submitted.
+    It runs in the background, so the user doesn't have to wait for emails to send.
     
+    Args:
+        feedback_id: The ID of the feedback in the database
+    """
     try:
+        # Step 1: Get the feedback data from the database
         feedback = Feedback.objects.select_related(
             'application_round__application__candidate',
-            'application_round__interviewer'
+            'application_round__interviewer',
+            'application_round__application__job'
         ).get(id=feedback_id)
         
+        # Step 2: Extract the data we need for the emails
         candidate = feedback.application_round.application.candidate
         interviewer = feedback.application_round.interviewer
-        job_title = feedback.application_round.application.job.title
+        job = feedback.application_round.application.job
+        feedback_date = timezone.now().strftime('%Y-%m-%d %H:%M')
+        rating = feedback.rating
+        comments = feedback.comments  
         
-        candidate_subject = f"New feedback for your {job_title} application"
-        candidate_message = f"""
-        Hello {candidate.first_name},
+        # Step 3: Prepare the email for the candidate
+        candidate_subject = f"New feedback for your {job.title} application"
+        candidate_template_data = {
+            'subject': candidate_subject,
+            'recipient_name': candidate.first_name,
+            'job_title': job.title,
+            'interviewer_name': f"{interviewer.first_name} {interviewer.last_name}",
+            'feedback_date': feedback_date,
+            'comments': comments ,
+            'rating': rating
+        }
         
-        A new feedback has been submitted for your application to {job_title}.
+        # Render the candidate's email using Django templates (instead of Jinja)
+        candidate_html = render_to_string('emails/feedback_notification.html', candidate_template_data)
+        send_feedback_notification_email(candidate.email, candidate_subject, candidate_html)
         
-        Interviewer: {interviewer.first_name} {interviewer.last_name}
-        Date: {timezone.now().strftime('%Y-%m-%d %H:%M')}
-        
-        You can check your feedback in your application dashboard.
-        
-        Best regards,
-        IMS Team
-        """
-        
-        send_mail(
-            subject=candidate_subject,
-            message=candidate_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[candidate.email],
-            fail_silently=False,
+        # Step 4: Prepare and send emails to all admins
+        admin_emails = list(
+            User.objects.filter(role='admin').values_list('email', flat=True)
         )
         
+        if admin_emails:
+            admin_subject = f"New feedback from {interviewer.first_name} for {candidate.first_name}"
+            admin_template_data = {
+                'subject': admin_subject,
+                'recipient_name': "Admin",
+                'candidate_name': f"{candidate.first_name} {candidate.last_name}",
+                'job_title': job.title,
+                'interviewer_name': f"{interviewer.first_name} {interviewer.last_name}",
+                'rating': feedback.rating,
+                'feedback_date': feedback_date,
+                'comments': feedback.comments
+            }
+            
+            # Render and send email to admins
+            for admin_email in admin_emails:
+                admin_html = render_to_string('emails/feedback_notification.html', admin_template_data)
+                send_feedback_notification_email(admin_email, admin_subject, admin_html)
         
         return f"Notification sent for feedback {feedback_id}"
     
@@ -51,7 +79,27 @@ def send_feedback_notification(feedback_id):
         return f"Feedback with ID {feedback_id} not found"
     except Exception as e:
         return f"Error sending notification: {str(e)}"
+
+
+def send_feedback_notification_email(recipient_email, subject, html_content):
+    """
+    This function sends the actual email using Django's email system.
     
+    Args:
+        recipient_email: The email address to send to
+        subject: The email subject line
+        html_content: The HTML content of the email (from our template)
+    """
+    send_mail(
+        subject=subject,
+        message="This email contains formatted content about interview feedback. Please use an email client that supports HTML to view it properly.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[recipient_email],
+        html_message=html_content,
+        fail_silently=False,
+    )
+    return f"Email sent to {recipient_email}"
+
 
 @shared_task
 def send_interview_reminders():
