@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'ims.middleware.RoleBasedThrottlingMiddleware',
 ]
 
 ROOT_URLCONF = 'ims.urls'
@@ -145,8 +146,22 @@ AUTH_USER_MODEL = 'account.User'
 REST_FRAMEWORK = { 
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-} 
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'ims.throttling.AdminRateThrottle',
+        'ims.throttling.InterviewerRateThrottle',
+        'ims.throttling.CandidateRateThrottle',
+        'ims.throttling.DefaultUserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/minute',
+        'admin': '500/minute',
+        'interviewer': '200/minute',
+        'candidate': '100/minute',
+        'user': '100/minute',
+    },
+}
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
@@ -177,7 +192,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {
      'daily-interview-reminders': {
          'task': 'interview.tasks.send_interview_reminders',
-         'schedule': 60,  # Run once every day (in seconds)
+         'schedule': 60*60*24,  # Run once every day 
          'options': {
              'expires': 60 * 60 * 2,  # Expires after 2 hours
          },
@@ -191,13 +206,3 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'gativora134@gmail.com'
 EMAIL_HOST_PASSWORD = 'dytbdfexkvjpmppc'
  
-# REST_FRAMEWORK = {
-#     'DEFAULT_THROTTLE_CLASSES': [
-#         'rest_framework.throttling.AnonRateThrottle',
-#         'rest_framework.throttling.UserRateThrottle',
-#     ],
-#     'DEFAULT_THROTTLE_RATES': {
-#         'anon': '10/hour', 
-#         'user': '100/hour',  
-#     },
-# }
