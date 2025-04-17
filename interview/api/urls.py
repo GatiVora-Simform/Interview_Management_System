@@ -15,6 +15,7 @@ from interview.api.views import (
     CandidateFeedbackListView,
     MyInterviewsView,
     UpcomingInterviewsView,
+    JobsWithApplicationCountsView,
 )
 
 urlpatterns = [
@@ -22,6 +23,7 @@ urlpatterns = [
     path('jobs/<int:pk>/', JobDetailView.as_view(), name='job-detail'),
     path('jobs/open/', OpenJobsListView.as_view(), name='open-jobs-list'),
     path('jobs/<int:pk>/applications/', JobSpecificApplicationsListView.as_view(), name='job-applications-list'),
+    path('jobs/application-counts/', JobsWithApplicationCountsView.as_view(), name='jobs-application-counts'),
     
     path('applications/', JobApplicationListCreateView.as_view(), name='application-list-create'),
     path('applications/<int:pk>/', JobApplicationDetailView.as_view(), name='application-detail'),

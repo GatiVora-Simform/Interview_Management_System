@@ -11,6 +11,8 @@ from interview.models import Job,JobApplication,InterviewRound,ApplicationRound,
 from interview.api.serializers import JobSerializer,JobApplicationSerializer,InterviewRoundSerializer,ApplicationRoundSerializer,FeedbackSerializer,JobApplicationStatusUpdateSerializer
 from interview.api.permissions import IsAdmin, IsInterviewer, IsCandidate, AdminFullInterviewerReadOnly
 
+from rest_framework.views import APIView
+from django.db import connection
 
 class JobListCreateView(generics.ListCreateAPIView):
     '''
@@ -242,5 +244,64 @@ class UpcomingInterviewsView(generics.ListAPIView):
             ).order_by('scheduled_time')
         
         return ApplicationRound.objects.none()
+
+class JobsWithApplicationCountsView(APIView):
+    """
+    Admin view to get all jobs with application counts
+    This view uses a stored procedure 'get_jobs_with_application_counts()' 
+    that should be created manually in pgAdmin with the following SQL:
+    
+    CREATE OR REPLACE FUNCTION get_jobs_with_application_counts()
+    RETURNS TABLE (
+        job_id INT,
+        job_title VARCHAR(100),
+        department VARCHAR(50),
+        position VARCHAR(30),
+        position_display TEXT,
+        is_open BOOLEAN,
+        application_count BIGINT
+    )
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT 
+            j.id::INT AS job_id,
+            j.title AS job_title,
+            j.department,
+            j.position,
+            CASE 
+                WHEN j.position = 'software_engineer' THEN 'Software Engineer'
+                WHEN j.position = 'senior_software_engineer' THEN 'Senior Software Engineer'
+                WHEN j.position = 'tech_lead' THEN 'Tech Lead'
+                WHEN j.position = 'manager' THEN 'Manager'
+                WHEN j.position = 'intern' THEN 'Intern'
+                ELSE j.position
+            END AS position_display,
+            j.is_open,
+            COUNT(ja.id) AS application_count
+        FROM 
+            interview_job j
+        LEFT JOIN 
+            interview_jobapplication ja ON j.id = ja.job_id
+        GROUP BY 
+            j.id, j.title, j.department, j.position, j.is_open
+        ORDER BY 
+            j.title;
+    END;
+    $$;
+    """
+    permission_classes = [IsAdmin]
+    
+    def get(self, request):
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM get_jobs_with_application_counts()")
+            columns = [col[0] for col in cursor.description]
+            results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            
+            return Response({
+                "count": len(results),
+                "results": results
+            })
 
 

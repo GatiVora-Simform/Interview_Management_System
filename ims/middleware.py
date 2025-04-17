@@ -52,7 +52,7 @@ class RoleBasedThrottlingMiddleware(MiddlewareMixin):
         current_time = time.time()
         request_history = [t for t in request_history if current_time - t < window]
         
-        # Check if we've hit the limit
+        # Check if we've hit the limit 
         if len(request_history) >= rate_limit:
             return HttpResponse(
                 "Too many requests. Please try again later.",
