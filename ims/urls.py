@@ -21,25 +21,35 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
 
-    path('api/login/', TokenObtainPairView.as_view(), name='login'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-
     path('admin/', admin.site.urls),
-    path('api/account/',include('account.api.urls')),
-    path('api/',include('interview.api.urls')),
+    
+    path('api/auth/token/', TokenObtainPairView.as_view(), name='token-obtain'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+    
+    path('api/', include('interview.api.urls')),
+    path('api/', include('account.api.urls'))
 
 ]
 
 '''
+candidate token
 {
-    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NDY4NDQ3NSwiaWF0IjoxNzQ0NjEyNDc1LCJqdGkiOiI0YmU4ZWJmYzlhNmQ0MmVhOGQ0ZDViMTI1MWI4ZGZiOSIsInVzZXJfaWQiOjJ9.L-E9QK-132MgBojO_GQ0bUfltkrvHUm0E4l24_xmP5s",
-    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0NjEyNzc1LCJpYXQiOjE3NDQ2MTI0NzUsImp0aSI6ImNiZjE2Y2Y3NjczZTQ4YjRiZGVmY2U3OGExNTMyMWEzIiwidXNlcl9pZCI6Mn0.yUmFPtIemALj0UsB7IGQxNNO2QlYiRRPYctj1k5v8F8"
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NDkzNjQ0OCwiaWF0IjoxNzQ0ODY0NDQ4LCJqdGkiOiI2ZDMyNzFlNjc3MWI0MzE4OWYwNGU2MjRiZmVmZDBhZSIsInVzZXJfaWQiOjl9.DVhC0bSL128kUmtvFtBiDhPld2KyUi3p-Aj-ficd4VE",
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1Mjk2NDQ4LCJpYXQiOjE3NDQ4NjQ0NDgsImp0aSI6IjMyYTFjODVhOGY1YzRlZmY5YzNhMWZhMjg0NjUyZTNiIiwidXNlcl9pZCI6OX0.7YCJvaNqmlQNXLHYtt15VPfsRdLOFE5ExLpTM2n5Hes"
 }
+
+interviewer2 token
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NDkzNjg2NiwiaWF0IjoxNzQ0ODY0ODY2LCJqdGkiOiIxNDc2NmUwZmNlODQ0NDlmYTBkOTA1OGEzZjUxYTNiZiIsInVzZXJfaWQiOjExfQ.mjLq6TRuDn2aCOkCOTl1M7XDnm_Wix7zx8RgfFeV2Ac",
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1Mjk2ODY2LCJpYXQiOjE3NDQ4NjQ4NjYsImp0aSI6IjQzY2E2ZDM2MzZiYjQ1ZGY4YmYyOWIzZTVkZWRkNWI3IiwidXNlcl9pZCI6MTF9.VkziVmxeGMep36aiVQYcJ4mzscsxCQGHVgNalFVbCow"
+}
+
+hr2 token
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NDkzNzAyNSwiaWF0IjoxNzQ0ODY1MDI1LCJqdGkiOiJjZjU0MTljYmNhNzk0MTZkOGVmMTk2NTU4N2ExMGVhOCIsInVzZXJfaWQiOjEyfQ.1rzmb2HXfO96INc9M1ce5IR1ViXDHuInIZTJ4mv4_Xk",
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1Mjk3MDI1LCJpYXQiOjE3NDQ4NjUwMjUsImp0aSI6ImJlZTg4ZjM5ZWE4ODRlYjVhMWM5NWJkZjVhMjlkYWExIiwidXNlcl9pZCI6MTJ9.J6QROf4dXg9PuprfSTHhCs_Fc2w-DJmM7dXZeEZ8SbE"
+} 
+
 '''
 
-''' hr2
-{
-    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NDg2NTE2NSwiaWF0IjoxNzQ0NzkzMTY1LCJqdGkiOiJhNTkxZTA2ZDljZTY0Y2IyODM2N2QyZDU1MjE4MzJjYyIsInVzZXJfaWQiOjd9.eEm3STrdJST1O_1WRUyoPv9XaqIiTYE2AE5-KM5cTw0",
-    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1MjI1MTY1LCJpYXQiOjE3NDQ3OTMxNjUsImp0aSI6IjEzMjk0YzVkZTRhMzRmYTM4MGM0NWE0YTQ1ZDk5OTdjIiwidXNlcl9pZCI6N30.sUpxXUp8wXuwjR817fzI9JO8UNaMdf3_KitHq4mTo-g"
-}
-'''
+

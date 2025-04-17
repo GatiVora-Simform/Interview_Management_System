@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from account.models import User
+import re
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -15,6 +16,11 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_email(self,value):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email already exists")
+        return value
+
+    def validate_phone(self, value):
+        if not re.fullmatch(r'\d{10}', value):
+            raise serializers.ValidationError("Phone number must be 10 digits")
         return value
 
     def validate(self, data):
