@@ -34,19 +34,6 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-    # def save(self):
-    #     user = User(
-    #         email=self.validated_data['email'],
-    #         first_name=self.validated_data['first_name'],
-    #         last_name=self.validated_data['last_name'],
-    #         role=self.validated_data['role'],                
-    #     )
-    #     password = self.validated_data['password']
-    #     password2 = self.validated_data['password2']
-    #     if password != password2:
-    #         raise serializers.ValidationError({'password': 'Passwords must match.'})
-    #     user.set_password(password)
-    #     user.save()
-    #     return user
+
         
 

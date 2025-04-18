@@ -192,7 +192,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {
      'daily-interview-reminders': {
          'task': 'interview.tasks.send_interview_reminders',
-         'schedule': 60*60*24,  # Run once every day 
+         'schedule': 60*60*24,  # Runs once every day 
          'options': {
              'expires': 60 * 60 * 2,  # Expires after 2 hours
          },
@@ -202,7 +202,7 @@ CELERY_BEAT_SCHEDULE = {
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'gativora134@gmail.com'
-EMAIL_HOST_PASSWORD = 'dytbdfexkvjpmppc'
+EMAIL_PORT = config('EMAIL_PORT')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
  

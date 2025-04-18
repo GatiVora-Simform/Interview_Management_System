@@ -23,6 +23,9 @@ from interview.api.permissions import IsAdmin, AdminFullInterviewerReadOnly, IsC
 #             return Response(data)
 
 class UserCreateView(generics.CreateAPIView):
+    """
+    This view is used to create users
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'email'
@@ -30,13 +33,16 @@ class UserCreateView(generics.CreateAPIView):
 
 class UserListView(generics.ListAPIView):
     """
-    Admin-only endpoint to list all users
+    This view is used to list all users
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    This view is used to get, update and delete user
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AdminFullInterviewerReadOnly]
@@ -48,7 +54,8 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     
-    def get_object(self):
+    # To avoid using the user ID in the URL
+    def get_object(self): 
         return self.request.user
 
         

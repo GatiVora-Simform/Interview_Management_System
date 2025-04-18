@@ -15,44 +15,34 @@ class RoleBasedThrottlingMiddleware(MiddlewareMixin):
             request.path == '/api/auth/token/refresh/'):
             return None
             
-        # Client IP and path for cache key
+
         ip = self.get_client_ip(request)
         path = request.path
         
-        # Create unique cache key for this IP/path combination
+        # Create cache key for this IP/path combination
         cache_key = f"throttle:{ip}:{path}"
         
-        # Set different rate limits based on user role
         if request.user.is_authenticated:
             if request.user.role == 'admin':
-                # for admins - 500 requests per minute
-                rate_limit = 500
-                window = 60  # 1 minute
-            elif request.user.role == 'interviewer':
-                # for interviewers - 200 requests per minute
-                rate_limit = 200
-                window = 60 
-            elif request.user.role == 'candidate':
-                # for candidates - 100 requests per minute
                 rate_limit = 100
                 window = 60  
-            else:
-                # Default user rate
-                rate_limit = 100
-                window = 60  # 1 minute
+            elif request.user.role == 'interviewer':
+                rate_limit = 50
+                window = 60 
+            elif request.user.role == 'candidate':
+                rate_limit = 10
+                window = 60  
         else:
-            # For unauthenticated users
-            rate_limit = 30
-            window = 60  # 1 minute
+            rate_limit = 10
+            window = 60  
         
         # Check if this request exceeds the rate limit
         request_history = cache.get(cache_key, [])
         
-        # Clean old requests from history (older than the window)
+        # Clean old requests from history older than the window
         current_time = time.time()
         request_history = [t for t in request_history if current_time - t < window]
         
-        # Check if we've hit the limit 
         if len(request_history) >= rate_limit:
             return HttpResponse(
                 "Too many requests. Please try again later.",
@@ -60,10 +50,8 @@ class RoleBasedThrottlingMiddleware(MiddlewareMixin):
                 headers={"Retry-After": str(window)}
             )
         
-        # Add current request to history
         request_history.append(current_time)
-        
-        # Update cache
+
         cache.set(cache_key, request_history, window)
         
         return None

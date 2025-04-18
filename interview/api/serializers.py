@@ -67,8 +67,8 @@ class FeedbackSerializer(serializers.ModelSerializer):
         total_rounds = app.rounds.count()
         completed_feedbacks = Feedback.objects.filter(application_round__application=app).count()
 
-        if total_rounds == completed_feedbacks:
-            app.status = 'closed'
+        if total_rounds == completed_feedbacks: 
+            app.status = 'closed' # closes the job application if feedback for all rounds is completed
             app.save()
 
         return feedback

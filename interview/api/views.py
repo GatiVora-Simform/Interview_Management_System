@@ -61,7 +61,7 @@ class JobApplicationListCreateView(generics.ListCreateAPIView):
         return super().get_permissions()
     
     def perform_create(self, serializer):
-        serializer.save(candidate=self.request.user)
+        serializer.save(candidate=self.request.user) #candidate is automatically set to the user making the request no need to pass candidate field
 
 class JobApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     '''
@@ -75,13 +75,6 @@ class JobApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
             return JobApplicationStatusUpdateSerializer
         return JobApplicationSerializer
     
-    def get_permissions(self):
-        application = self.get_object()
-        if self.request.user.role == 'candidate' and application.candidate == self.request.user and self.request.method in ['GET']:
-            self.permission_classes = [IsCandidate]
-        else:
-            self.permission_classes = [IsAdmin]
-        return super().get_permissions()
 
 class JobSpecificApplicationsListView(generics.ListAPIView):
     '''
@@ -185,6 +178,17 @@ class FeedbackCreateView(generics.CreateAPIView):
                 {'error': 'You cannot provide feedback for this interview round'},
                 status=status.HTTP_403_FORBIDDEN
             )
+        
+        # if feedback already exists for this application round
+        existing_feedback = Feedback.objects.filter(
+            application_round=application_round
+        ).exists()
+       
+        if existing_feedback:
+            return Response(
+                {'error': 'Feedback has already been provided for this interview round'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         feedback = serializer.save(interviewer=user)
          
@@ -247,55 +251,17 @@ class UpcomingInterviewsView(generics.ListAPIView):
 
 class JobsWithApplicationCountsView(APIView):
     """
-    Admin view to get all jobs with application counts
-    This view uses a stored procedure 'get_jobs_with_application_counts()' 
-    that should be created manually in pgAdmin with the following SQL:
-    
-    CREATE OR REPLACE FUNCTION get_jobs_with_application_counts()
-    RETURNS TABLE (
-        job_id INT,
-        job_title VARCHAR(100),
-        department VARCHAR(50),
-        position VARCHAR(30),
-        position_display TEXT,
-        is_open BOOLEAN,
-        application_count BIGINT
-    )
-    LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        RETURN QUERY
-        SELECT 
-            j.id::INT AS job_id,
-            j.title AS job_title,
-            j.department,
-            j.position,
-            CASE 
-                WHEN j.position = 'software_engineer' THEN 'Software Engineer'
-                WHEN j.position = 'senior_software_engineer' THEN 'Senior Software Engineer'
-                WHEN j.position = 'tech_lead' THEN 'Tech Lead'
-                WHEN j.position = 'manager' THEN 'Manager'
-                WHEN j.position = 'intern' THEN 'Intern'
-                ELSE j.position
-            END AS position_display,
-            j.is_open,
-            COUNT(ja.id) AS application_count
-        FROM 
-            interview_job j
-        LEFT JOIN 
-            interview_jobapplication ja ON j.id = ja.job_id
-        GROUP BY 
-            j.id, j.title, j.department, j.position, j.is_open
-        ORDER BY 
-            j.title;
-    END;
-    $$;
+    This view to get all jobs with application counts
+    This view uses a stored procedure 'get_jobs_with_application_counts()' that inserts results into a temporary table.
     """
     permission_classes = [IsAdmin]
     
     def get(self, request):
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM get_jobs_with_application_counts()")
+
+            cursor.execute("CALL get_jobs_with_application_counts()")
+            
+            cursor.execute("SELECT * FROM temp_job_results")
             columns = [col[0] for col in cursor.description]
             results = [dict(zip(columns, row)) for row in cursor.fetchall()]
             
@@ -303,5 +269,3 @@ class JobsWithApplicationCountsView(APIView):
                 "count": len(results),
                 "results": results
             })
-
-
