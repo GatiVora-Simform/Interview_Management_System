@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from account.models import User
+import re
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -7,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email','first_name','last_name','role','password','password2')
+        fields = ('email','first_name','last_name','phone','role','password','password2')
         extra_kwargs = {
             'password': {'write_only': True}, #to hide password field
         }
@@ -15,6 +16,11 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_email(self,value):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email already exists")
+        return value
+
+    def validate_phone(self, value):
+        if not re.fullmatch(r'\d{10}', value):
+            raise serializers.ValidationError("Phone number must be 10 digits")
         return value
 
     def validate(self, data):
@@ -28,19 +34,6 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-    # def save(self):
-    #     user = User(
-    #         email=self.validated_data['email'],
-    #         first_name=self.validated_data['first_name'],
-    #         last_name=self.validated_data['last_name'],
-    #         role=self.validated_data['role'],                
-    #     )
-    #     password = self.validated_data['password']
-    #     password2 = self.validated_data['password2']
-    #     if password != password2:
-    #         raise serializers.ValidationError({'password': 'Passwords must match.'})
-    #     user.set_password(password)
-    #     user.save()
-    #     return user
+
         
 

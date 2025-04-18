@@ -22,8 +22,8 @@ class User(AbstractBaseUser,TimeStampModel,PermissionsMixin):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
-    is_staff = models.BooleanField(default=False)
-    role = models.CharField(max_length=15,choices=USER_ROLES,default='candidate')
+    is_staff = models.BooleanField(default=True)
+    role = models.CharField(max_length=15,choices=USER_ROLES,default='admin')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name','last_name','role']
