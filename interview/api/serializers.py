@@ -19,14 +19,19 @@ class JobApplicationSerializer(serializers.ModelSerializer):
 
     job_details = JobSerializer(source='job', read_only=True)
     candidate_details = UserSerializer(source='candidate', read_only=True)
-
+    
     class Meta:
         model = JobApplication
         fields = ['id', 'job', 'job_details','candidate', 'candidate_details','applied_on', 'status', 'is_selected']
+        read_only_fields = ['candidate', 'applied_on', 'status', 'is_selected']
 
     def validate(self, data):
-        if JobApplication.objects.filter(job=data['job'], candidate=data['candidate']).exists():
-            raise serializers.ValidationError("Candidate has already applied to this job.")
+        # Get the candidate from the request context instead of from data
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            candidate = request.user
+            if JobApplication.objects.filter(job=data['job'], candidate=candidate).exists():
+                raise serializers.ValidationError("You have already applied to this job.")
         return data
     
 class InterviewRoundSerializer(serializers.ModelSerializer):
@@ -61,6 +66,10 @@ class FeedbackSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+
+        if 'interviewer' in validated_data:
+            validated_data.pop('interviewer')
+
         feedback = super().create(validated_data)
 
         app = feedback.application_round.application

@@ -52,13 +52,15 @@ class JobApplicationListCreateView(generics.ListCreateAPIView):
     filter_backends = [DjangoFilterBackend,filters.OrderingFilter]
     filterset_fields = ['status', 'is_selected', 'job']
     ordering_fields = ['applied_on', 'status']
-    
+
     def get_permissions(self):
-        if self.request.method == 'POST' and self.request.user.role == 'candidate':
-            self.permission_classes = [IsAuthenticated]
-        else:
-            self.permission_classes = [IsAdmin]
-        return super().get_permissions()
+
+        if self.request.method == 'POST' and self.request.user.is_authenticated:
+            user_role = getattr(self.request.user, 'role', '').strip()
+            if user_role == 'candidate':
+                return [IsCandidate()]
+            
+        return [IsAdmin()]
     
     def perform_create(self, serializer):
         serializer.save(candidate=self.request.user) #candidate is automatically set to the user making the request no need to pass candidate field
@@ -113,7 +115,7 @@ class MyApplicationsListView(generics.ListAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        if user.role != 'candidate':
+        if user.role.strip() != 'candidate':
             return JobApplication.objects.none()
         return JobApplication.objects.filter(candidate=user)
 
@@ -169,17 +171,21 @@ class FeedbackCreateView(generics.CreateAPIView):
     serializer_class = FeedbackSerializer
     permission_classes = [IsInterviewer]
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
         user = self.request.user
         application_round = serializer.validated_data['application_round']
-
-        if application_round.interviewer != user and user.role != 'admin':
+        
+        # Check if the user is the assigned interviewer
+        if application_round.interviewer.id != user.id:
             return Response(
                 {'error': 'You cannot provide feedback for this interview round'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # if feedback already exists for this application round
+        # Check if feedback already exists for this application round
         existing_feedback = Feedback.objects.filter(
             application_round=application_round
         ).exists()
@@ -190,11 +196,19 @@ class FeedbackCreateView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        feedback = serializer.save(interviewer=user)
+        feedback = Feedback.objects.create(
+            application_round=application_round,
+            comments=serializer.validated_data['comments'],
+            rating=serializer.validated_data['rating']
+        )
          
         # Trigger async task to send notification emails
         from interview.tasks import send_feedback_notification
         send_feedback_notification.delay(feedback.id)
+        
+        serializer = self.get_serializer(feedback)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class CandidateFeedbackListView(generics.ListAPIView):
     '''
@@ -232,7 +246,7 @@ class UpcomingInterviewsView(generics.ListAPIView):
     This view is used to get all upcoming interviews
     '''
     serializer_class = ApplicationRoundSerializer
-    permission_classes = [AdminFullInterviewerReadOnly]
+    permission_classes = [IsAdmin,IsCandidate]
     
     def get_queryset(self):
         from django.utils import timezone

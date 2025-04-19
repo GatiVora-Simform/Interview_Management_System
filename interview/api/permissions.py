@@ -5,21 +5,21 @@ class IsAdmin(permissions.BasePermission):
     Allows access only to admin users.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'admin'
+        return request.user.is_authenticated and request.user.role.strip() == 'admin'
  
 class IsInterviewer(permissions.BasePermission):
     """
     Allows access only to interviewer users.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'interviewer'
+        return request.user.is_authenticated and request.user.role.strip() == 'interviewer'
  
 class IsCandidate(permissions.BasePermission):
     """
     Allows access only to candidate users.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'candidate'
+        return request.user.is_authenticated and request.user.role.strip() == 'candidate'
  
 class AdminFullInterviewerReadOnly(permissions.BasePermission):
     """
@@ -29,10 +29,10 @@ class AdminFullInterviewerReadOnly(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
          
-        if request.user.role == 'admin':
+        if request.user.role.strip() == 'admin':
             return True
              
-        if request.user.role == 'interviewer' and request.method in permissions.SAFE_METHODS:
+        if request.user.role.strip() == 'interviewer' and request.method in permissions.SAFE_METHODS:
             return True
              
         return False 
