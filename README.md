@@ -100,8 +100,6 @@ A comprehensive Django REST Framework-based application for managing the end-to-
 
 ## 🔐 API Endpoints
 
-## API Endpoints
-
 ### Authentication
 
 | Endpoint | Method | Description | Access |
