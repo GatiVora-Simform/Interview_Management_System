@@ -100,47 +100,75 @@ A comprehensive Django REST Framework-based application for managing the end-to-
 
 ## 🔐 API Endpoints
 
-### Authentication
-- `POST /api/auth/token/` - Obtain JWT token
-- `POST /api/auth/token/refresh/` - Refresh JWT token
+## API Endpoints
 
-### Users
-- `POST /api/auth/register/` - Register a new user
-- `GET /api/auth/users/` - List all users (Admin only)
-- `GET /api/auth/users/me/` - Get current user profile
-- `PUT /api/auth/users/me/` - Update current user profile
-- `GET /api/auth/users/{id}/` - Get user details (Admin only)
-- `PUT/PATCH /api/auth/users/{id}/` - Update user (Admin only)
-- `DELETE /api/auth/users/{id}/` - Delete user (Admin only)
+### Authentication
+
+| Endpoint | Method | Description | Access |
+|----------|--------|-------------|--------|
+| `/api/auth/token/` | POST | Obtain JWT token | Anyone |
+| `/api/auth/token/refresh/` | POST | Refresh JWT token | Authenticated user |
+
+
+### User Management
+
+| Endpoint | Method | Description | Access |
+|----------|--------|-------------|--------|
+| `/api/users/` | GET | List all users | Admin |
+| `/api/users/create` | POST | Register user | Anyone |
+| `/api/users/<id>/` | GET, PUT, DELETE | View, update or delete user | Admin |
+| `/api/users/me/` | GET, PUT | View or update current user profile | Authenticated user |
+
 
 ### Jobs
-- `GET/POST /api/jobs/` - List/create jobs
-- `GET/PUT/DELETE /api/jobs/{id}/` - Retrieve/update/delete job
-- `GET /api/jobs/open/` - List open jobs
-- `GET /api/jobs/application-counts/` - List jobs with application counts (Admin only)
+
+| Endpoint | Method | Description | Access |
+|----------|--------|-------------|--------|
+| `/api/jobs/` | GET, POST | List all jobs, Create new job | Admin  |
+| `/api/jobs/<id>/` | GET, PUT, DELETE | Retrieve, update or delete job | Admin |
+| `/api/jobs/open/` | GET | List all open jobs | Authenticated users |
+| `/api/jobs/<id>/applications/` | GET | List applications for a job | Admin |
+| `/api/jobs/application-counts/` | GET | Get jobs with application counts | Admin |
 
 ### Applications
-- `GET/POST /api/applications/` - List/create applications
-- `GET/PUT/DELETE /api/applications/{id}/` - Retrieve/update/delete application
-- `GET /api/applications/me/` - View candidate's own applications
-- `GET /api/jobs/{id}/applications/` - List applications for a job
 
-### Interview Process
-- `GET/POST /api/interview-rounds/` - List/create interview rounds
-- `GET/POST /api/applications/{id}/rounds/` - List/create rounds for an application
-- `GET/PUT/DELETE /api/application-rounds/{id}/` - Retrieve/update/delete application round
-- `POST /api/application-rounds/{id}/feedback/` - Create feedback for a round
-- `GET /api/feedback/me/` - View candidate's feedback
-- `GET /api/interviews/upcoming/` - View upcoming interviews
-- `GET /api/interviews/me/` - View interviewer's interviews
+| Endpoint | Method | Description | Access |
+|----------|--------|-------------|--------|
+| `/api/applications/` | GET, POST | List all applications, Create application | Admin (GET), Candidate (POST) |
+| `/api/applications/<id>/` | GET, PUT, DELETE | Retrieve, update or delete application | Admin |
+| `/api/applications/<id>/select/` | PUT | Select a candidate for a job | Admin |
+| `/api/applications/me/` | GET | List current user's applications | Candidate |
+
+### Interview Rounds
+
+| Endpoint | Method | Description | Access |
+|----------|--------|-------------|--------|
+| `/api/interview-rounds/` | GET, POST | List/create interview round types | Admin |
+| `/api/applications/<id>/rounds/` | GET, POST | List/create rounds for an application | Admin  |
+| `/api/application-rounds/<id>/` | GET, PUT, DELETE | Manage a specific application round | Admin |
+
+### Feedback
+
+| Endpoint | Method | Description | Access |
+|----------|--------|-------------|--------|
+| `/api/application-rounds/<id>/feedback/` | POST | Create feedback for an interview round | Interviewer |
+| `/api/feedback/me/` | GET | Get feedback for the logged-in candidate | Candidate |
+
+### Interviews
+
+| Endpoint | Method | Description | Access |
+|----------|--------|-------------|--------|
+| `/api/interviews/upcoming/` | GET | List upcoming interviews | Admin, Interviewer |
+| `/api/interviews/me/` | GET | List interviews for the logged-in interviewer | Interviewer |
+
 
 ## 🔒 Rate Limiting
 
 The system implements role-based throttling:
-- Admins: 500 requests per minute
-- Interviewers: 200 requests per minute
-- Candidates: 100 requests per minute
-- Unauthenticated users: 30 requests per minute
+- Admins: 100 requests per minute
+- Interviewers: 50 requests per minute
+- Candidates: 10 requests per minute
+- Unauthenticated users: 10 requests per minute
 
 ## 🤝 Contributing
 

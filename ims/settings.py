@@ -155,11 +155,11 @@ REST_FRAMEWORK = {
         'ims.throttling.DefaultUserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '30/minute',
-        'admin': '500/minute',
-        'interviewer': '200/minute',
-        'candidate': '100/minute',
-        'user': '100/minute',
+        'anon': '5/minute',
+        'admin': '100/minute',
+        'interviewer': '50/minute',
+        'candidate': '10/minute',
+        'user': '10/minute',
     },
 }
 
