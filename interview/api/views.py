@@ -20,7 +20,7 @@ class JobListCreateView(generics.ListCreateAPIView):
     '''
     queryset = Job.objects.all()
     serializer_class = JobSerializer
-    permission_classes = [AdminFullInterviewerReadOnly]
+    permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['department', 'position', 'is_open'] #/jobs/?department=Python
     search_fields = ['title', 'description', 'department'] #/jobs/?search=developer 
@@ -32,7 +32,7 @@ class JobDetailView(generics.RetrieveUpdateDestroyAPIView):
     '''
     queryset = Job.objects.all()
     serializer_class = JobSerializer
-    permission_classes = [AdminFullInterviewerReadOnly]
+    permission_classes = [IsAdmin]
 
 class OpenJobsListView(generics.ListAPIView):
     '''
